@@ -1,0 +1,33 @@
+Package: animatedplyr
+Type: Package
+Title: Animated Visualizations of 'dplyr' Verbs for Statistics Education
+Version: 0.1.0
+Authors@R: c(
+    person("Immanuel", "Williams", email = "immanuel@example.edu",
+           role = c("aut", "cre")))
+Description: Generates interactive HTML/CSS/JS animations that show how
+    'dplyr' verbs (filter, select, mutate) transform a data frame.
+    Designed for statistics education: animations render inline below
+    Quarto/R Markdown chunks and in the RStudio/Positron Viewer pane.
+    Smart sampling keeps displays small (at most 5 rows and 4 columns)
+    while preserving the pedagogical signal of each verb. Optional GIF
+    export is available via suggested packages.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.3.1
+Depends:
+    R (>= 4.1.0)
+Imports:
+    dplyr,
+    htmltools,
+    jsonlite,
+    rlang
+Suggests:
+    knitr,
+    magick,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    webshot2
+VignetteBuilder: knitr
+LazyData: true
+Config/testthat/edition: 3

@@ -1,0 +1,68 @@
+---
+title: "animatedplyr — Demo"
+format:
+  html:
+    embed-resources: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+library(animatedplyr)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## The three verbs
+
+### filter()
+
+```{r}
+animate_filter(iris, Sepal.Length > 5, seed = 42)
+```
+
+### select()
+
+```{r}
+animate_select(iris,Sepal.Length, Sepal.Width, seed = 42)
+```
+
+### mutate()
+
+```{r}
+animate_mutate(mtcars, wt_kg = wt * 453.6, seed = 42)
+```
+
+## One-call wrapper
+
+```{r}
+with_animation(mtcars, filter(mpg > 19.3), seed = 42)
+```
+
+## Reproducibility
+
+Same seed, same sample — render this document twice and these two are identical:
+
+```{r}
+animate_filter(mtcars, mpg > 19.3, seed = 7)
+```
+
+## Custom configuration
+
+```{r}
+big <- animate_config(box_size = 120, font_size = 15, duration = 1800)
+animate_select(mtcars, mpg, wt, config = big, seed = 42)
+```
+
+## Edge cases become callouts
+
+```{r}
+animate_filter(mtcars, mpg > 0)      # all rows pass
+```
+
+```{r}
+animate_filter(mtcars, mpg > 1000)   # no rows pass
+```
+
+## Disclosure pill
+
+`mtcars` has 32 rows and 11 columns; the animation samples 5 rows and at most
+4 columns, and the gray pill below the grid says what was hidden.

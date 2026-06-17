@@ -1,0 +1,16 @@
+# Hand-maintained NAMESPACE.
+# If you later adopt roxygen2, run devtools::document() and it will
+# regenerate this file from the @export tags already present in R/.
+
+export(animate_filter)
+export(animate_select)
+export(animate_mutate)
+export(with_animation)
+export(animate_config)
+export(animate_save_gif)
+
+S3method(print, animate_html)
+
+importFrom(rlang, enquo, enquos, quo_get_expr, eval_tidy, as_label, is_call)
+importFrom(jsonlite, toJSON)
+importFrom(htmltools, HTML, html_print)

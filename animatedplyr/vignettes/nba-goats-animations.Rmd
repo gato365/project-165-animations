@@ -1,0 +1,307 @@
+---
+title: "Animating dplyr Verbs with NBA GOAT Data"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Animating dplyr Verbs with NBA GOAT Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE,
+  message   = FALSE,
+  warning   = FALSE,
+  comment   = "#>"
+)
+```
+
+## 1. Introduction
+
+### The `animatedplyr` Package
+
+`animatedplyr` generates step-by-step HTML animations that show how the three core **dplyr data-wrangling verbs** transform a data frame:
+
+| Verb       | What it does                   | Animator           |
+|------------|--------------------------------|--------------------|
+| `select()` | Keep or drop columns           | `animate_select()` |
+| `filter()` | Keep rows matching a condition | `animate_filter()` |
+| `mutate()` | Add or modify columns          | `animate_mutate()` |
+
+Each animation renders inline below a code chunk in Quarto / R Markdown and in the RStudio / Positron Viewer pane at the console. Because big data frames are hard to follow on screen, `animatedplyr` applies *smart sampling*: it shows at most **5 rows and 4 columns** while always including the columns that matter for the operation being animated.
+
+### The NBA GOATs Dataset
+
+`kb_df` contains a **game-by-game log** of Kobe Bryant's first 15 NBA regular seasons (1996–2011). Each of the **1,156 rows** is one game; the **38 columns** record shooting stats, rebounding, playmaking, game context, and computed indicators like double-doubles and the Hollinger Game Score.
+
+This dataset is ideal for learning data wrangling because:
+
+-   It has a mix of numeric, character, and date columns.
+-   It rewards filtering (high-scoring games, road wins, clutch performances).
+-   It rewards selecting (focusing on just the stat columns you care about).
+-   It rewards mutating (building efficiency metrics, classifying performances).
+
+------------------------------------------------------------------------
+
+## 2. Loading the Dataset
+
+```{r load-pkg}
+library(animatedplyr)
+library(dplyr)
+```
+
+The `kb_df` data frame is bundled with the package and loads lazily — just name it and R finds it automatically.
+
+```{r load-data}
+data(kb_df)   # explicit load (optional but good practice in scripts)
+dim(kb_df)
+```
+
+### Quick peek
+
+```{r glimpse}
+dplyr::glimpse(kb_df)
+```
+
+### Key columns at a glance
+
+```{r head-key}
+head(kb_df[, c("Season", "Date", "Game_Location",
+                    "Game_Outcome", "PTS", "AST", "TRB", "GmSc")], 8)
+```
+
+### Summary statistics
+
+```{r summary-pts}
+summary(kb_df[, c("PTS", "AST", "TRB", "MP", "GmSc")])
+```
+
+Kobe's highest single-game scoring output:
+
+```{r max-pts}
+kb_df[which.max(kb_df$PTS),
+          c("Date", "Season", "Opp", "Game_Location", "PTS", "FGA", "GmSc")]
+```
+
+------------------------------------------------------------------------
+
+## 3. `select` — Choosing Columns
+
+`animate_select()` shows which columns survive and which fade away. The animation plays two steps:
+
+1.  **Before** — the full set of sampled columns is displayed.
+2.  **After** — dropped columns fade out; surviving columns recenter.
+
+### 3.1 Select a handful of columns by name
+
+The most common use case: pick exactly the columns you need.
+
+```{r select-basic}
+animate_select(kb_df, Name, Season, TRB, seed = 1)
+```
+
+### 3.2 Select game-context columns
+
+Narrow the view to the situational columns that describe *where* and *how* a game was played.
+
+```{r select-context}
+animate_select(kb_df,
+               Date, Season, Game_Location, Game_Outcome, Point_Margin,
+               seed = 7)
+```
+
+### 3.3 Select shooting statistics only
+
+```{r select-shooting}
+animate_select(kb_df, PTS, FG, FGA, FG_Percent, FT, FTA, FT_Percent,
+               seed = 42)
+```
+
+### 3.4 Using the `with_animation()` wrapper
+
+`with_animation()` lets you write the exact `dplyr` expression you already know, and the package routes it to the right animator automatically.
+
+```{r select-with-animation}
+with_animation(kb_df,
+               select(Name, Season, PTS, AST, TRB, BLK, STL),
+               seed = 10)
+```
+
+### 3.5 Customising the animation appearance
+
+`animate_config()` lets you slow the animation down and increase the font size — handy in a classroom projector setting.
+
+```{r select-config}
+cfg <- animate_config(duration = 1800, font_size = 15)
+
+animate_select(kb_df, Season, Tm, Opp, PTS, AST, TRB,
+               config = cfg, seed = 5)
+```
+
+------------------------------------------------------------------------
+
+## 4. `filter` — Subsetting Rows
+
+`animate_filter()` shows the condition being evaluated row by row:
+
+1.  **Before** — all sampled rows are displayed; kept rows turn **green**, dropped rows turn **red**.
+2.  **After** — the red rows collapse away, leaving only the kept rows.
+
+### 4.1 Filter for home games
+
+```{r filter-home}
+animate_filter(kb_df, Game_Location == "Home", seed = 1)
+```
+
+### 4.2 Filter for wins on the road
+
+Combining two conditions with `&` works exactly as in `dplyr`.
+
+```{r filter-road-wins}
+animate_filter(nba_goats,
+               Game_Location == "Away" & Game_Outcome == "W",
+               seed = 3)
+```
+
+### 4.3 Filter for elite scoring performances (40+ points)
+
+```{r filter-40plus}
+animate_filter(kb_df, PTS >= 40, seed = 42)
+```
+
+Let's also see how many games that is:
+
+```{r count-40plus}
+sum(kb_df$PTS >= 40, na.rm = TRUE)
+```
+
+### 4.4 Filter for the iconic 81-point game
+
+```{r filter-81}
+animate_filter(kb_df, PTS == 81, seed = 1)
+```
+
+### 4.5 Filter for double-doubles
+
+```{r filter-double-double}
+animate_filter(kb_df, DD == 1, seed = 2)
+```
+
+### 4.6 Filter for efficient performances (Game Score above 30)
+
+The **Game Score** (column `GmSc`) is Hollinger's single-number efficiency summary. A score above 30 is an elite performance.
+
+```{r filter-gmscore}
+animate_filter(kb_df, GmSc >= 30, seed = 6)
+```
+
+### 4.7 Using the `with_animation()` wrapper for filter
+
+```{r filter-with-animation}
+with_animation(kb_df,
+               filter(PTS > 30 & Game_Outcome == "W"),
+               seed = 9)
+```
+
+### 4.8 Season-specific filtering
+
+```{r filter-season-8}
+animate_filter(kb_df, Season == "season_8", seed = 5)
+```
+
+------------------------------------------------------------------------
+
+## 5. `mutate` — Creating New Variables
+
+`animate_mutate()` shows how a new column is computed:
+
+1.  **Before** — the source column(s) the expression uses are highlighted in the animation.
+2.  **After** — the new column pops into view with its computed values.
+
+> **Tip:** `animate_mutate()` animates one new column at a time. Chain calls for multiple mutations.
+
+### 5.1 Compute field-goal efficiency rate
+
+Raw points are important, but *how efficiently* were they scored? Let's compute the true shooting percentage (a simplified version: `PTS / FGA`).
+
+```{r mutate-efficiency}
+animate_mutate(kb_df, pts_per_attempt = PTS / FGA, seed = 1)
+```
+
+### 5.2 Classify games as high-scoring (30+ points)
+
+```{r mutate-high-score}
+animate_mutate(kb_df, high_scoring = PTS >= 30, seed = 4)
+```
+
+### 5.3 Create a home/away numeric flag
+
+Convert the character column `Game_Location` into a binary `is_home` indicator.
+
+```{r mutate-home-flag}
+animate_mutate(kb_df, is_home = Game_Location == "Home", seed = 7)
+```
+
+### 5.4 Compute points above average
+
+This shows how a value-relative-to-mean transformation looks step by step.
+
+```{r mutate-above-avg}
+avg_pts <- mean(kb_df$PTS, na.rm = TRUE)
+animate_mutate(kb_df, pts_above_avg = PTS - avg_pts, seed = 3)
+```
+
+### 5.5 Compute a combined scoring + playmaking metric
+
+```{r mutate-impact}
+animate_mutate(kb_df, scoring_playmaking = PTS + (AST * 2), seed = 2)
+```
+
+### 5.6 Label the game result as a descriptive string
+
+```{r mutate-result-label}
+animate_mutate(kb_df,
+               result_label = ifelse(Game_Outcome == "W", "Win", "Loss"),
+               seed = 5)
+```
+
+### 5.7 Using the `with_animation()` wrapper for mutate
+
+```{r mutate-with-animation}
+with_animation(kb_df,
+               mutate(blk_stl_sum = BLK + STL),
+               seed = 8)
+```
+
+### 5.8 Chaining animations to show a multi-step pipeline
+
+Below we build up a transformation step-by-step — first selecting the columns we care about, then filtering for winning performances, then mutating to add an efficiency metric — with a separate animation for each step.
+
+```{r pipeline-select}
+# Step 1 — narrow the view
+animate_select(kb_df, Season, PTS, AST, TRB, FGA, Game_Outcome, seed = 1)
+```
+
+```{r pipeline-filter}
+# Step 2 — keep only wins
+animate_filter(kb_df, Game_Outcome == "W", seed = 1)
+```
+
+```{r pipeline-mutate}
+# Step 3 — add an efficiency column
+animate_mutate(kb_df, pts_per_fg_attempt = PTS / FGA, seed = 1)
+```
+
+------------------------------------------------------------------------
+
+## Further Reading
+
+-   `?animate_select`, `?animate_filter`, `?animate_mutate` — per-function docs.
+-   `?animate_config` — tuning box size, font, animation speed, and column colors.
+-   `?with_animation` — the single-call wrapper for classroom use.
+-   `?kb_df`, `?lb_df`, `?mj_df` — player game-log dataset docs.
+-   `?variable_names_df` — plain-English descriptions of every column.
+-   `?divisions_df` — team abbreviation to division/conference lookup.
