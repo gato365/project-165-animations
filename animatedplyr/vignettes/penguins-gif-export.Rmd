@@ -60,7 +60,7 @@ Because it needs a browser and two extra packages, GIF export is **opt-in**.
 Install the suggested packages first:
 
 ```{r install-suggests, eval=FALSE}
-install.packages(c("webshot2", "magick", "palmerpenguins"))
+# install.packages(c("webshot2", "magick", "palmerpenguins"))
 ```
 
 `webshot2` also needs Chrome/Chromium available on your system.
@@ -126,7 +126,7 @@ filt_anim <- animate_filter(
   seed = 7
 )
 
-animate_save_gif(filt_anim, file.path(gif_dir, "penguins_filter.gif"))
+animate_save_gif(filt_anim, file.path(gif_dir, "penguins_filter.gif"),fps = 0.5)
 ```
 
 ```{r filter-embed, echo=FALSE, eval=can_gif, out.width="100%"}
