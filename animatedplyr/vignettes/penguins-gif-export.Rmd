@@ -1,0 +1,233 @@
+---
+title: "Exporting dplyr Animations as GIFs with Palmer Penguins"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Exporting dplyr Animations as GIFs with Palmer Penguins}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE,
+  message   = FALSE,
+  warning   = FALSE,
+  comment   = "#>"
+)
+
+# GIF export needs webshot2 + magick + a local Chrome/Chromium. When any of
+# those are unavailable (e.g. on CRAN's build machines) we still show the code
+# but skip the slow rendering so the vignette always builds.
+can_gif <- requireNamespace("webshot2", quietly = TRUE) &&
+  requireNamespace("magick", quietly = TRUE) &&
+  requireNamespace("palmerpenguins", quietly = TRUE)
+
+# Where the generated GIFs live, relative to the rendered vignette.
+gif_dir <- "gifs"
+if (can_gif && !dir.exists(gif_dir)) dir.create(gif_dir)
+```
+
+## 1. Introduction
+
+The companion vignette *Animating dplyr Verbs with NBA GOAT Data* renders the
+three core animators — `animate_select()`, `animate_filter()`, and
+`animate_mutate()` — **inline** as live HTML/CSS/JS.
+
+This vignette covers the other output path: turning each of those same three
+animations into a self-contained **animated GIF** with `animate_save_gif()`. A
+GIF works anywhere an image works — PDF output, Word, Google Slides, a README,
+or plain markdown via `![](file.gif)` — so it is the right choice when you need
+a portable artifact rather than a live widget.
+
+We demonstrate the workflow on the **Palmer Penguins** dataset, a friendly
+alternative to `iris` for teaching data wrangling.
+
+### How GIF export works
+
+`animate_save_gif()` renders each step of an animation to a PNG frame with a
+headless browser (`webshot2`), then stitches the frames together with `magick`:
+
+| Function           | GIF helper                       |
+|--------------------|----------------------------------|
+| `animate_select()` | `animate_save_gif(anim, "x.gif")` |
+| `animate_filter()` | `animate_save_gif(anim, "x.gif")` |
+| `animate_mutate()` | `animate_save_gif(anim, "x.gif")` |
+
+Because it needs a browser and two extra packages, GIF export is **opt-in**.
+Install the suggested packages first:
+
+```{r install-suggests, eval=FALSE}
+install.packages(c("webshot2", "magick", "palmerpenguins"))
+```
+
+`webshot2` also needs Chrome/Chromium available on your system.
+
+------------------------------------------------------------------------
+
+## 2. The Palmer Penguins Dataset
+
+`palmerpenguins::penguins` records body measurements for 344 penguins from
+three species on three islands in the Palmer Archipelago, Antarctica.
+
+```{r load-pkg}
+library(animatedplyr)
+library(dplyr)
+library(palmerpenguins)
+```
+
+```{r peek}
+penguins_df <- as.data.frame(penguins)
+dplyr::glimpse(penguins_df)
+```
+
+The dataset has exactly the mix that makes the three verbs worth animating:
+
+-   character/factor columns (`species`, `island`, `sex`) to **select**.
+-   numeric columns with a clear story (`body_mass_g`, `flipper_length_mm`) to
+    **filter**.
+-   ratios worth computing (`bill_length_mm / bill_depth_mm`) to **mutate**.
+
+------------------------------------------------------------------------
+
+## 3. `select` → GIF
+
+Build the animation as usual, then hand the returned object to
+`animate_save_gif()`. Here we keep just the identity columns and body mass.
+
+```{r select-gif, eval=can_gif, results="hide"}
+sel_anim <- animate_select(
+  penguins_df, species, island, body_mass_g,
+  seed = 1
+)
+
+animate_save_gif(sel_anim, file.path(gif_dir, "penguins_select.gif"))
+```
+
+```{r select-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "penguins_select.gif"))
+```
+
+The GIF plays two frames: the full sampled set of columns, then the dropped
+columns fading away to leave `species`, `island`, and `body_mass_g`.
+
+------------------------------------------------------------------------
+
+## 4. `filter` → GIF
+
+Same pattern with `animate_filter()`. We keep the heavier penguins
+(body mass above 4000 g).
+
+```{r filter-gif, eval=can_gif, results="hide"}
+filt_anim <- animate_filter(
+  penguins_df, body_mass_g > 4000,
+  seed = 7
+)
+
+animate_save_gif(filt_anim, file.path(gif_dir, "penguins_filter.gif"))
+```
+
+```{r filter-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "penguins_filter.gif"))
+```
+
+In the rendered frames, kept rows turn green and dropped rows turn red, then the
+red rows collapse away.
+
+### Tuning the GIF
+
+`animate_save_gif()` exposes a few knobs: `fps` (frames per second — lower is
+slower and easier to read) and `width`/`height` (pixel size of each frame).
+
+```{r filter-gif-tuned, eval=can_gif, results="hide"}
+animate_save_gif(
+  filt_anim,
+  file.path(gif_dir, "penguins_filter_slow.gif"),
+  fps    = 0.5,
+  width  = 800,
+  height = 500
+)
+```
+
+------------------------------------------------------------------------
+
+## 5. `mutate` → GIF
+
+Finally, `animate_mutate()`. We compute a bill shape ratio
+(`bill_length_mm / bill_depth_mm`) — a single new column, which is exactly what
+`animate_mutate()` is designed to narrate.
+
+```{r mutate-gif, eval=can_gif, results="hide"}
+mut_anim <- animate_mutate(
+  penguins_df,
+  bill_ratio = bill_length_mm / bill_depth_mm,
+  seed = 3
+)
+
+animate_save_gif(mut_anim, file.path(gif_dir, "penguins_mutate.gif"))
+```
+
+```{r mutate-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "penguins_mutate.gif"))
+```
+
+The source columns (`bill_length_mm`, `bill_depth_mm`) are highlighted, then the
+new `bill_ratio` column pops into view with its computed values.
+
+------------------------------------------------------------------------
+
+## 6. The `with_animation()` shortcut also exports
+
+`animate_save_gif()` accepts anything the animators return, including the output
+of `with_animation()`. So the one-call classroom syntax exports to GIF too.
+
+```{r with-animation-gif, eval=can_gif, results="hide"}
+wa_anim <- with_animation(
+  penguins_df,
+  filter(flipper_length_mm > 210),
+  seed = 5
+)
+
+animate_save_gif(wa_anim, file.path(gif_dir, "penguins_with_animation.gif"))
+```
+
+------------------------------------------------------------------------
+
+## 7. All three in one pass
+
+When you have a folder of teaching examples, a small loop saves the whole set.
+This builds one GIF per verb in a single sweep.
+
+```{r batch-gif, eval=can_gif, results="hide"}
+animations <- list(
+  select = animate_select(penguins_df, species, island, body_mass_g, seed = 1),
+  filter = animate_filter(penguins_df, body_mass_g > 4000, seed = 7),
+  mutate = animate_mutate(penguins_df,
+                          bill_ratio = bill_length_mm / bill_depth_mm, seed = 3)
+)
+
+for (verb in names(animations)) {
+  animate_save_gif(
+    animations[[verb]],
+    file.path(gif_dir, paste0("penguins_", verb, ".gif"))
+  )
+}
+```
+
+Each call prints a confirmation like
+`Saved 4-frame GIF to .../penguins_select.gif` and returns the output path
+invisibly, so you can collect the paths if you need them downstream.
+
+------------------------------------------------------------------------
+
+## Further Reading
+
+-   `?animate_save_gif` — full GIF export documentation, including `fps` and
+    frame-size arguments.
+-   `?animate_select`, `?animate_filter`, `?animate_mutate` — per-verb docs.
+-   `?with_animation` — the single-call wrapper.
+-   `vignette("nba-goats-animations", package = "animatedplyr")` — the inline
+    HTML animation walkthrough.
+-   `palmerpenguins::penguins` — dataset documentation.

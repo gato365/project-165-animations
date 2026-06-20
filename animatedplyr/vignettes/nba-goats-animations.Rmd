@@ -234,7 +234,7 @@ animate_mutate(kb_df, pts_per_attempt = PTS / FGA, seed = 1)
 ### 5.2 Classify games as high-scoring (30+ points)
 
 ```{r mutate-high-score}
-animate_mutate(kb_df, high_scoring = PTS >= 30, seed = 4)
+animate_mutate(kb_df, high_multi = PTS * 30, seed = 4)
 ```
 
 ### 5.3 Create a home/away numeric flag

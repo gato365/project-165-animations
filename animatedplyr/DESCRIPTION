@@ -25,6 +25,7 @@ Imports:
 Suggests:
     knitr,
     magick,
+    palmerpenguins,
     rmarkdown,
     testthat (>= 3.0.0),
     webshot2
