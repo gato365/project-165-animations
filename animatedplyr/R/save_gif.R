@@ -18,7 +18,8 @@
 #'   [animate_select()], [animate_mutate()], or [with_animation()].
 #' @param path Output file path ending in `.gif`.
 #' @param fps Frames per second of the resulting GIF. Default 0.8
-#'   (slow enough to read each step).
+#'   (slow enough to read each step). Any positive value is allowed; it is
+#'   converted internally to a per-frame delay.
 #' @param width,height Pixel dimensions of each captured frame.
 #'   Defaults 700 x 450.
 #'
@@ -90,7 +91,11 @@ animate_save_gif <- function(animation, path, fps = 0.8,
   }
 
   frames <- magick::image_read(png_paths)
-  gif <- magick::image_animate(frames, fps = fps)
+  # magick::image_animate() requires `fps` to be a factor of 100, which rules
+  # out readable slow speeds like 0.8. Convert to a per-frame delay instead
+  # (centiseconds), which accepts any positive fps.
+  delay <- max(1L, as.integer(round(100 / fps)))
+  gif <- magick::image_animate(frames, delay = delay)
   magick::image_write(gif, path)
 
   message("Saved ", n_steps, "-frame GIF to ", normalizePath(path))
