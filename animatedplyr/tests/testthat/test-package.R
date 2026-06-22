@@ -97,6 +97,34 @@ test_that("custom config flows into the HTML", {
   expect_match(html, "Menlo")
 })
 
+test_that("extended appearance config flows into the HTML", {
+  cfg <- animate_config(
+    canvas_bg = "#1e1e1e", keep_color = "#00ff00",
+    border_radius = 12, cell_opacity = 0.5, transition = 250
+  )
+  out  <- animate_filter(mtcars, mpg > 19.3, seed = 1, config = cfg)
+  html <- as.character(out)
+  expect_match(html, "--canvas-bg: #1e1e1e", fixed = TRUE)
+  expect_match(html, "--keep-color: #00ff00", fixed = TRUE)
+  expect_match(html, "--border-radius: 12px", fixed = TRUE)
+  expect_match(html, "--cell-opacity: 0.5", fixed = TRUE)
+  expect_match(html, "--transition: 250ms", fixed = TRUE)
+  expect_false(grepl("__[A-Z_]+__", html))   # no unreplaced tokens
+})
+
+test_that("animate_config validates the new knobs", {
+  expect_error(animate_config(cell_opacity = 2), "cell_opacity")
+  expect_error(animate_config(max_cols = 0), "max_cols")
+  expect_error(animate_config(border_width = -1), "border_width")
+})
+
+test_that("max_cols caps the number of columns shown", {
+  out <- animate_select(mtcars, mpg, cyl, hp, seed = 1,
+                        config = animate_config(max_cols = 3))
+  p <- attr(out, "animate_payload")
+  expect_lte(length(p$before$cols), 3)
+})
+
 test_that("animate_save_gif errors helpfully on bad input", {
   expect_error(animate_save_gif("not an animation", "x.gif"),
                "animate_\\*\\(\\)")

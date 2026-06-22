@@ -8,6 +8,7 @@ export(animate_mutate)
 export(with_animation)
 export(animate_config)
 export(animate_save_gif)
+export(animate_studio)
 
 S3method(print, animate_html)
 

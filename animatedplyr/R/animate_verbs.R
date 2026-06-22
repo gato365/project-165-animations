@@ -59,7 +59,7 @@ animate_filter <- function(data, condition, n_rows = 5L, seed = NULL,
 
   s <- .with_seed(seed, {
     rows <- .sample_for_filter(df, mask, n = n_rows)
-    cols <- .sample_cols(df, required = cond_cols, max_cols = 4L)
+    cols <- .sample_cols(df, required = cond_cols, max_cols = cfg$max_cols)
     list(rows = rows, cols = cols)
   })
 
@@ -124,7 +124,8 @@ animate_select <- function(data, ..., n_rows = 5L, seed = NULL,
     return(.as_animate_html(.html_template(payload, cfg), payload, cfg))
   }
 
-  s <- .sample_for_select(df, selected_cols, n = n_rows, seed = seed)
+  s <- .sample_for_select(df, selected_cols, n = n_rows, seed = seed,
+                          max_cols = cfg$max_cols)
 
   shown_before <- df[s$rows_idx, s$show_cols, drop = FALSE]
   shown_after  <- shown_before[, intersect(s$show_cols, selected_cols),
@@ -191,7 +192,9 @@ animate_mutate <- function(data, ..., n_rows = 5L, seed = NULL,
     source_cols <- character(0)
   }
 
-  s <- .sample_for_mutate(df, source_cols, n = n_rows, seed = seed)
+  # Reserve one column slot for the new column mutate() adds.
+  s <- .sample_for_mutate(df, source_cols, n = n_rows, seed = seed,
+                          max_cols = max(1L, cfg$max_cols - 1L))
 
   shown_before <- df[s$rows_idx, s$show_cols, drop = FALSE]
   shown_after  <- dplyr::mutate(shown_before, !!!dots)

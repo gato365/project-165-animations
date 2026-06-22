@@ -9,43 +9,66 @@
 .TEMPLATE <- '
 <style>
 #__ID__ {
+  --box: __BOX__px;
+  --font-size: __FONT_SIZE__px;
+  --font-weight: __FONT_WEIGHT__;
+  --transition: __TRANSITION__ms;
+  --canvas-bg: __CANVAS_BG__;
+  --canvas-pad: __CANVAS_PAD__px;
+  --title-bg: __TITLE_BG__;
+  --title-color: __TITLE_COLOR__;
+  --cell-bg: __CELL_BG__;
+  --cell-color: __CELL_COLOR__;
+  --header-color: __HEADER_COLOR__;
+  --border-color: __BORDER_COLOR__;
+  --border-width: __BORDER_WIDTH__px;
+  --border-radius: __BORDER_RADIUS__px;
+  --gap: __GAP__px;
+  --cell-opacity: __CELL_OPACITY__;
+  --keep-color: __KEEP_COLOR__;
+  --drop-color: __DROP_COLOR__;
+  --new-color: __NEW_COLOR__;
   font-family: "__FONT_FAMILY__", monospace;
-  background: #fafafa; color: #222;
-  padding: 1.5rem 1rem; border: 1px solid #eee; border-radius: 6px;
+  background: var(--canvas-bg); color: #222;
+  padding: var(--canvas-pad); border: 1px solid #eee; border-radius: 6px;
   display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
 }
 #__ID__ * { box-sizing: border-box; }
 #__ID__ .anim-title {
   font-family: "__FONT_FAMILY__", monospace;
-  font-size: calc(__FONT_SIZE__px + 5px); font-weight: 700;
-  background: #111; color: #fff; padding: 7px 18px; border-radius: 4px;
+  font-size: calc(var(--font-size) + 5px); font-weight: 700;
+  background: var(--title-bg); color: var(--title-color);
+  padding: 7px 18px; border-radius: 4px;
   display: inline-block; margin: 0;
 }
-#__ID__ .subtitle { font-size: calc(__FONT_SIZE__px - 1px); color: #888; margin-top: 6px; }
+#__ID__ .subtitle { font-size: calc(var(--font-size) - 1px); color: #888; margin-top: 6px; }
 #__ID__ .title-block { text-align: center; }
-#__ID__ .grid { display: flex; flex-direction: column; gap: 8px; }
+#__ID__ .grid { display: flex; flex-direction: column; gap: var(--gap); }
 #__ID__ .grid-row {
-  display: flex; gap: 8px; justify-content: center;
-  transition: opacity 600ms ease, max-height 600ms ease;
+  display: flex; gap: var(--gap); justify-content: center;
+  transition: opacity var(--transition) ease, max-height var(--transition) ease;
   overflow: hidden; max-height: 64px;
 }
 #__ID__ .grid-row.row-faded { opacity: 0; max-height: 0; pointer-events: none; }
 #__ID__ .cell {
-  width: __BOX__px; height: calc(__BOX__px * 0.42);
+  width: var(--box); height: calc(var(--box) * 0.42);
   display: flex; align-items: center; justify-content: center;
-  font-size: __FONT_SIZE__px; font-weight: 600;
-  border-radius: 5px; border: 1.5px solid rgba(0,0,0,0.18);
-  transition: opacity 600ms ease, background-color 600ms ease,
-              color 600ms ease, box-shadow 600ms ease, transform 600ms ease;
+  font-size: var(--font-size); font-weight: var(--font-weight);
+  opacity: var(--cell-opacity);
+  border-radius: var(--border-radius);
+  border: var(--border-width) solid var(--border-color);
+  transition: opacity var(--transition) ease, background-color var(--transition) ease,
+              color var(--transition) ease, box-shadow var(--transition) ease,
+              transform var(--transition) ease;
   white-space: nowrap; overflow: hidden;
 }
-#__ID__ .cell.header { color: #fff; font-size: calc(__FONT_SIZE__px - 2px); height: calc(__BOX__px * 0.36); }
-#__ID__ .cell.data { background: #F0F0F0; color: #222; }
+#__ID__ .cell.header { color: var(--header-color); font-size: calc(var(--font-size) - 2px); height: calc(var(--box) * 0.36); }
+#__ID__ .cell.data { background: var(--cell-bg); color: var(--cell-color); }
 #__ID__ .cell.faded { opacity: 0; }
-#__ID__ .cell.data.flag-keep { box-shadow: 0 0 0 2px #43A047 inset; background: #E8F5E9; }
-#__ID__ .cell.data.flag-drop { box-shadow: 0 0 0 2px #E63946 inset; background: #FFEBEE; color: #B71C1C; }
+#__ID__ .cell.data.flag-keep { box-shadow: 0 0 0 2px var(--keep-color) inset; background: #E8F5E9; }
+#__ID__ .cell.data.flag-drop { box-shadow: 0 0 0 2px var(--drop-color) inset; background: #FFEBEE; color: #B71C1C; }
 #__ID__ .cell.data.flag-new  {
-  box-shadow: 0 0 0 2px #2196F3 inset; background: #E3F2FD; color: #0D47A1;
+  box-shadow: 0 0 0 2px var(--new-color) inset; background: #E3F2FD; color: #0D47A1;
   font-weight: 700; animation: pop___ID__ 500ms ease;
 }
 #__ID__ .cell.header.flag-new-header { animation: pop___ID__ 500ms ease; }
@@ -55,16 +78,16 @@
   100% { transform: scale(1); opacity: 1; }
 }
 #__ID__ .step-label {
-  font-size: __FONT_SIZE__px; color: #555; font-style: italic;
+  font-size: var(--font-size); color: #555; font-style: italic;
   min-height: 20px; text-align: center; max-width: 560px;
 }
 #__ID__ .pill {
-  font-size: calc(__FONT_SIZE__px - 2px); color: #888;
+  font-size: calc(var(--font-size) - 2px); color: #888;
   background: #efefef; border: 1px solid #e0e0e0;
   padding: 3px 12px; border-radius: 12px; display: none;
 }
 #__ID__ .callout {
-  font-size: __FONT_SIZE__px; color: #555; background: #fff;
+  font-size: var(--font-size); color: #555; background: #fff;
   border: 1.5px dashed #bbb; border-radius: 6px;
   padding: 18px 26px; text-align: center; max-width: 480px; display: none;
 }
@@ -73,7 +96,7 @@
   padding: 6px 18px; border-radius: 4px; border: 1.5px solid #ccc;
   background: #fff; color: #222; cursor: pointer;
   font-family: "__FONT_FAMILY__", monospace;
-  font-size: calc(__FONT_SIZE__px - 1px); font-weight: 600;
+  font-size: calc(var(--font-size) - 1px); font-weight: 600;
 }
 #__ID__ .controls button:hover { background: #f0f0f0; border-color: #aaa; }
 #__ID__ .controls button:disabled { opacity: 0.35; cursor: default; }
@@ -322,6 +345,23 @@
   html <- gsub("__BOX__",          as.character(config$box_size),   html, fixed = TRUE)
   html <- gsub("__FONT_SIZE__",    as.character(config$font_size),  html, fixed = TRUE)
   html <- gsub("__FONT_FAMILY__",  config$font_family,              html, fixed = TRUE)
+  html <- gsub("__FONT_WEIGHT__",  as.character(config$font_weight),    html, fixed = TRUE)
+  html <- gsub("__TRANSITION__",   as.character(config$transition),     html, fixed = TRUE)
+  html <- gsub("__CANVAS_BG__",    config$canvas_bg,                    html, fixed = TRUE)
+  html <- gsub("__CANVAS_PAD__",   as.character(config$canvas_padding), html, fixed = TRUE)
+  html <- gsub("__TITLE_BG__",     config$title_bg,                     html, fixed = TRUE)
+  html <- gsub("__TITLE_COLOR__",  config$title_color,                  html, fixed = TRUE)
+  html <- gsub("__CELL_BG__",      config$cell_bg,                      html, fixed = TRUE)
+  html <- gsub("__CELL_COLOR__",   config$cell_color,                   html, fixed = TRUE)
+  html <- gsub("__HEADER_COLOR__", config$header_color,                 html, fixed = TRUE)
+  html <- gsub("__BORDER_COLOR__", config$border_color,                 html, fixed = TRUE)
+  html <- gsub("__BORDER_WIDTH__", as.character(config$border_width),   html, fixed = TRUE)
+  html <- gsub("__BORDER_RADIUS__", as.character(config$border_radius), html, fixed = TRUE)
+  html <- gsub("__GAP__",          as.character(config$cell_gap),       html, fixed = TRUE)
+  html <- gsub("__CELL_OPACITY__", as.character(config$cell_opacity),   html, fixed = TRUE)
+  html <- gsub("__KEEP_COLOR__",   config$keep_color,                   html, fixed = TRUE)
+  html <- gsub("__DROP_COLOR__",   config$drop_color,                   html, fixed = TRUE)
+  html <- gsub("__NEW_COLOR__",    config$new_color,                    html, fixed = TRUE)
   html
 }
 
