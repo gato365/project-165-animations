@@ -102,8 +102,8 @@ sel_anim <- animate_select(
   penguins_df, species, island, body_mass_g,
   seed = 1
 )
-
-animate_save_gif(sel_anim, file.path(gif_dir, "penguins_select.gif"))
+sel_anim
+# animate_save_gif(sel_anim, file.path(gif_dir, "penguins_select.gif"))
 ```
 
 ```{r select-embed, echo=FALSE, eval=can_gif, out.width="100%"}

@@ -3,7 +3,7 @@ Type: Package
 Title: Animated Visualizations of 'dplyr' Verbs for Statistics Education
 Version: 0.1.0
 Authors@R: c(
-    person("Immanuel", "Williams", email = "immanuel@example.edu",
+    person("Immanuel", "Williams", email = "immanuelwilliams@gato365.com",
            role = c("aut", "cre")))
 Description: Generates interactive HTML/CSS/JS animations that show how
     'dplyr' verbs (filter, select, mutate) transform a data frame.
