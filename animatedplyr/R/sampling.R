@@ -35,8 +35,8 @@
       n_drop <- n_drop + min(shortfall, length(drop_idx) - n_drop)
     }
 
-    pick_keep <- if (n_keep > 0L) sample(kept_idx, n_keep) else integer(0)
-    pick_drop <- if (n_drop > 0L) sample(drop_idx, n_drop) else integer(0)
+    pick_keep <- if (n_keep > 0L) .resample(kept_idx, n_keep) else integer(0)
+    pick_drop <- if (n_drop > 0L) .resample(drop_idx, n_drop) else integer(0)
 
     rows_idx <- sort(c(pick_keep, pick_drop))   # preserve original order
     list(rows_idx = rows_idx, flags = mask[rows_idx])

@@ -20,6 +20,12 @@
   code
 }
 
+# Safe sampling without replacement. base::sample() has a notorious gotcha:
+# when `x` is a single number >= 1 it samples from seq_len(x) instead of
+# returning x itself. Indexing by position sidesteps that entirely, so this is
+# correct even when `x` has length 1.
+.resample <- function(x, size) x[sample.int(length(x), size)]
+
 # Unique container id so multiple animations on one page never clash.
 # Uses a package-local counter (not the RNG) so user set.seed() calls can
 # never cause two animations to share an id.
@@ -89,7 +95,7 @@
   n_extra <- max(0L, max_cols - length(required))
   pool <- setdiff(all_cols, required)
   extras <- if (n_extra > 0L && length(pool) > 0L) {
-    sample(pool, min(n_extra, length(pool)))
+    .resample(pool, min(n_extra, length(pool)))
   } else {
     character(0)
   }

@@ -337,6 +337,11 @@
 .html_template <- function(payload, config, static_step = -1L) {
   payload$config <- config[c("duration", "show_disclosure")]
   payload_json <- jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null")
+  # The payload is embedded inside a <script> block. jsonlite does not escape
+  # "</", so a data value containing "</script>" would close the block early
+  # and break the page. Escaping "</" as "<\/" is inert in JSON/JS strings and
+  # makes the embed safe for arbitrary cell contents.
+  payload_json <- gsub("</", "<\\/", payload_json, fixed = TRUE)
 
   html <- .TEMPLATE
   html <- gsub("__ID__",           .new_id(),                       html, fixed = TRUE)
