@@ -154,12 +154,22 @@ ui <- fluidPage(
         column(6, color_input("cell_color",  "Cell text",   "#222222"))
       ),
       fluidRow(
-        column(6, color_input("border_color","Border",      "#d0d0d0")),
-        column(6, color_input("new_color",   "New (mutate)","#2196f3"))
+        column(6, color_input("border_color","Border",      "#d0d0d0"))
       ),
-      fluidRow(
-        column(6, color_input("keep_color",  "Keep (filter)","#43a047")),
-        column(6, color_input("drop_color",  "Drop (filter)","#e63946"))
+
+      # Verb-specific highlight colors: only shown for the verb they affect.
+      conditionalPanel(
+        condition = "input.verb == 'mutate'",
+        fluidRow(
+          column(6, color_input("new_color", "New (mutate)", "#2196f3"))
+        )
+      ),
+      conditionalPanel(
+        condition = "input.verb == 'filter'",
+        fluidRow(
+          column(6, color_input("keep_color", "Keep (filter)", "#43a047")),
+          column(6, color_input("drop_color", "Drop (filter)", "#e63946"))
+        )
       ),
 
       tags$hr(),
