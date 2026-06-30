@@ -27,11 +27,19 @@
 #' animate_filter(mtcars, mpg > 19.3, seed = 42)
 animate_filter <- function(data, condition, n_rows = 5L, seed = NULL,
                            config = NULL) {
+  
+  ## --------------
+  ## A) Create the configuration, capture the condition, and get the data name
+  ## --------------
   cfg <- .merge_config(config)
   cond_quo  <- rlang::enquo(condition)
   cond_text <- rlang::as_label(cond_quo)
   data_name <- rlang::as_label(rlang::enquo(data))
 
+
+  ## --------------
+  ## B) Evaluate the condition and handle missing values
+  ## --------------
   df <- as.data.frame(data, stringsAsFactors = FALSE)
   mask <- rlang::eval_tidy(cond_quo, data = df)
   if (!is.logical(mask)) {
@@ -39,12 +47,23 @@ animate_filter <- function(data, condition, n_rows = 5L, seed = NULL,
   }
   mask[is.na(mask)] <- FALSE
 
+
+  ## --------------
+  ## C) Create the title and detect edge cases
+  ## --------------
   title <- paste0("filter(", data_name, ", ", cond_text, ")")
   callout <- .detect_edge_cases("filter",
                                 n_kept = sum(mask), n_total = nrow(df))
 
+  ## --------------
+  ## D) Identify columns used in the condition
+  ## --------------
   cond_cols <- intersect(all.vars(rlang::quo_get_expr(cond_quo)), colnames(df))
 
+
+  ## --------------
+  ## E) Handle edge cases with a callout message
+  ## --------------
   if (!is.null(callout)) {
     payload <- list(
       verb = "filter", title = title, expression = cond_text,
@@ -57,15 +76,25 @@ animate_filter <- function(data, condition, n_rows = 5L, seed = NULL,
     return(.as_animate_html(.html_template(payload, cfg), payload, cfg))
   }
 
+  ## --------------
+  ## F) Sample rows and columns to show in the animation
+  ## --------------
   s <- .with_seed(seed, {
     rows <- .sample_for_filter(df, mask, n = n_rows)
     cols <- .sample_cols(df, required = cond_cols, max_cols = cfg$max_cols)
     list(rows = rows, cols = cols)
   })
 
+  ## --------------
+  ## G) Create the "before" and "after" data frames for the animation
+  ## --------------
   shown   <- df[s$rows$rows_idx, s$cols, drop = FALSE]
   kept_df <- shown[s$rows$flags, , drop = FALSE]
 
+
+  ## --------------
+  ## H) Create the payload for the animation
+  ## --------------
   payload <- list(
     verb       = "filter",
     title      = title,
@@ -77,8 +106,16 @@ animate_filter <- function(data, condition, n_rows = 5L, seed = NULL,
     disclosure = .disclosure(df, length(s$rows$rows_idx), s$cols),
     callout    = NULL
   )
+  ## --------------
+  ## I) Render the animation
+  ## --------------
   .as_animate_html(.html_template(payload, cfg), payload, cfg)
 }
+
+
+
+
+
 
 
 #' Animate a select() operation
@@ -102,15 +139,26 @@ animate_filter <- function(data, condition, n_rows = 5L, seed = NULL,
 #' animate_select(mtcars, mpg, cyl, hp)
 animate_select <- function(data, ..., n_rows = 5L, seed = NULL,
                            config = NULL) {
+
+  ## --------------
+  ## A) Create the configuration and determine the data name
+  ## --------------                          
   cfg <- .merge_config(config)
   data_name <- rlang::as_label(rlang::enquo(data))
 
+
+  ## --------------
+  ## B) Create the title and other strings for the animation
+  ## --------------
   df <- as.data.frame(data, stringsAsFactors = FALSE)
   selected_df  <- dplyr::select(df, ...)
   selected_cols <- colnames(selected_df)
   sel_text <- paste(selected_cols, collapse = ", ")
   title <- paste0("select(", data_name, ", ", sel_text, ")")
 
+  ## --------------
+  ## C) Handle edge cases with a callout message
+  ## --------------
   callout <- .detect_edge_cases("select", n_cols_after = length(selected_cols))
   if (!is.null(callout)) {
     payload <- list(
@@ -124,13 +172,23 @@ animate_select <- function(data, ..., n_rows = 5L, seed = NULL,
     return(.as_animate_html(.html_template(payload, cfg), payload, cfg))
   }
 
+  ## --------------
+  ## D) Sample rows and columns to show in the animation 
+  ## --------------
   s <- .sample_for_select(df, selected_cols, n = n_rows, seed = seed,
                           max_cols = cfg$max_cols)
 
+  ## --------------
+  ## E) Create the "before" and "after" data frames for the animation
+  ## --------------
   shown_before <- df[s$rows_idx, s$show_cols, drop = FALSE]
   shown_after  <- shown_before[, intersect(s$show_cols, selected_cols),
                                drop = FALSE]
 
+
+  ## --------------
+  ## F) Create the payload for the animation
+  ## --------------
   payload <- list(
     verb       = "select",
     title      = title,
@@ -141,6 +199,9 @@ animate_select <- function(data, ..., n_rows = 5L, seed = NULL,
     disclosure = .disclosure(df, length(s$rows_idx), s$show_cols),
     callout    = NULL
   )
+  ## --------------
+  ## G) Render the animation
+  ## --------------
   .as_animate_html(.html_template(payload, cfg), payload, cfg)
 }
 
@@ -166,9 +227,16 @@ animate_select <- function(data, ..., n_rows = 5L, seed = NULL,
 #' animate_mutate(mtcars, wt_kg = wt * 453.6)
 animate_mutate <- function(data, ..., n_rows = 5L, seed = NULL,
                            config = NULL) {
+
+  ## --------------
+  ## A) Create the configuration and determine the data name
+  ## --------------
   cfg <- .merge_config(config)
   data_name <- rlang::as_label(rlang::enquo(data))
 
+  ## --------------
+  ## B) Capture the expression and check for errors 
+  ## --------------
   dots <- rlang::enquos(...)
   if (length(dots) == 0L || is.null(names(dots)) || names(dots)[1] == "") {
     stop("animate_mutate() needs a named expression, e.g. ",
@@ -179,12 +247,18 @@ animate_mutate <- function(data, ..., n_rows = 5L, seed = NULL,
             "using the first and ignoring the rest.", call. = FALSE)
     dots <- dots[1]
   }
-
+  ## --------------
+  ## C) Create the data frame and determine the new column
+  ## --------------
   df <- as.data.frame(data, stringsAsFactors = FALSE)
   new_col   <- names(dots)[1]
   expr_text <- paste0(new_col, " = ", rlang::as_label(dots[[1]]))
   title     <- paste0("mutate(", data_name, ", ", expr_text, ")")
 
+
+  ## --------------
+  ## D) Identify source columns used in the expression 
+  ## --------------
   source_cols <- intersect(all.vars(rlang::quo_get_expr(dots[[1]])),
                            colnames(df))
   if (length(source_cols) == 0L) {
@@ -192,13 +266,24 @@ animate_mutate <- function(data, ..., n_rows = 5L, seed = NULL,
     source_cols <- character(0)
   }
 
+  ## --------------
+  ## E) Sample rows and columns to show in the animation
+  ## --------------
   # Reserve one column slot for the new column mutate() adds.
   s <- .sample_for_mutate(df, source_cols, n = n_rows, seed = seed,
                           max_cols = max(1L, cfg$max_cols - 1L))
 
+
+  ## --------------
+  ## F) Create the "before" and "after" data frames for the animation
+  ## --------------
   shown_before <- df[s$rows_idx, s$show_cols, drop = FALSE]
   shown_after  <- dplyr::mutate(shown_before, !!!dots)
 
+
+  ## --------------
+  ## G) Create the payload for the animation
+  ## --------------
   payload <- list(
     verb       = "mutate",
     title      = title,
@@ -211,5 +296,8 @@ animate_mutate <- function(data, ..., n_rows = 5L, seed = NULL,
     disclosure = .disclosure(df, length(s$rows_idx), s$show_cols),
     callout    = NULL
   )
+  ## --------------
+  ## H) Render the animation
+  ## --------------
   .as_animate_html(.html_template(payload, cfg), payload, cfg)
 }

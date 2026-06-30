@@ -1,0 +1,131 @@
+---
+title: "Exporting dplyr Animations as GIFs with Gapminder"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Exporting dplyr Animations as GIFs with Gapminder}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE,
+  message   = FALSE,
+  warning   = FALSE,
+  comment   = "#>"
+)
+
+can_gif <- requireNamespace("webshot2", quietly = TRUE) &&
+  requireNamespace("magick", quietly = TRUE) &&
+  requireNamespace("gapminder", quietly = TRUE)
+
+gif_dir <- "../gifs"
+if (can_gif && !dir.exists(gif_dir)) dir.create(gif_dir, recursive = TRUE)
+```
+
+## 1. Introduction
+
+This vignette shows the package's GIF export path with the classic
+`gapminder::gapminder` dataset. It follows the same workflow as the other
+vignette: build an animation object first, then export it with
+`animate_save_gif()`.
+
+The example emphasizes a log10 transformation so the mutate step has a clear
+numeric story rather than just a trivial copy.
+
+------------------------------------------------------------------------
+
+## 2. Load the data
+
+```{r load-pkg}
+library(animatedplyr)
+library(dplyr)
+library(gapminder)
+```
+
+```{r load-data}
+gapminder_df <- as.data.frame(gapminder)
+dplyr::glimpse(gapminder_df)
+```
+
+The dataset is a good fit for the three verbs because it has:
+
+-   character and factor-like fields such as `country` and `continent`.
+-   a time variable in `year` for filtering.
+-   numeric measures like `lifeExp`, `pop`, and `gdpPercap` for mutation.
+
+------------------------------------------------------------------------
+
+## 3. `select` → GIF
+
+This export keeps the columns most useful for a quick reading of the data:
+country, continent, year, and GDP per capita.
+
+```{r select-gif, eval=can_gif, results="hide"}
+sel_anim <- animate_select(
+  gapminder_df, country, continent, year, gdpPercap,
+  seed = 1
+)
+
+animate_save_gif(sel_anim, file.path(gif_dir, "gapminder_select.gif"))
+```
+
+```{r select-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "gapminder_select.gif"))
+```
+
+------------------------------------------------------------------------
+
+## 4. `filter` → GIF
+
+This filter keeps only more recent observations, so the animation has a clear
+before/after story.
+
+```{r filter-gif, eval=can_gif, results="hide"}
+filt_anim <- animate_filter(
+  gapminder_df, year >= 1997,
+  seed = 7
+)
+
+animate_save_gif(filt_anim, file.path(gif_dir, "gapminder_filter.gif"), fps = 0.8)
+```
+
+```{r filter-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "gapminder_filter.gif"))
+```
+
+------------------------------------------------------------------------
+
+## 5. `mutate` → GIF
+
+This is the main transformation requested for the vignette: a log10 mutation of
+GDP per capita.
+
+```{r mutate-gif, eval=can_gif, results="hide"}
+mut_anim <- animate_mutate(
+  gapminder_df,
+  pop_log10 = log10(pop),
+  seed = 3
+)
+
+animate_save_gif(mut_anim, file.path(gif_dir, "gapminder_mutate_log10_pop.gif"))
+```
+
+```{r mutate-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "gapminder_mutate_log10_gdp.gif"))
+```
+
+The source column `gdpPercap` is highlighted first, then the new
+`gdpPercap_log10` column appears with the transformed values.
+
+------------------------------------------------------------------------
+
+## 6. Further Reading
+
+-   `?animate_save_gif` for the GIF export API.
+-   `?animate_select`, `?animate_filter`, `?animate_mutate` for the three verb
+    animators.
+-   `gapminder::gapminder` for the dataset documentation.
