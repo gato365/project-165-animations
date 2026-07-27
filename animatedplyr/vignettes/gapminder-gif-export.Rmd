@@ -109,11 +109,12 @@ GDP per capita.
 ```{r mutate-gif, eval=can_gif, results="hide"}
 mut_anim <- animate_mutate(
   gapminder_df,
-  pop_log10 = log10(pop),
+  gdpPercap_log10 = log10(gdpPercap),
   seed = 3
 )
 
-animate_save_gif(mut_anim, file.path(gif_dir, "gapminder_mutate_log10_pop.gif"))
+animate_save_gif(mut_anim,
+                 file.path(gif_dir, "gapminder_mutate_log10_gdp.gif"))
 ```
 
 ```{r mutate-embed, echo=FALSE, eval=can_gif, out.width="100%"}
