@@ -106,6 +106,21 @@
   background: #ddd; transition: background 0.3s; cursor: pointer;
 }
 #__ID__ .dot.active { background: #222; }
+#__ID__ .group-box {
+  position: relative; display: flex; flex-direction: column; gap: var(--gap);
+  border: 2px dashed #999; border-radius: 10px;
+  padding: calc(var(--gap) + 4px); padding-top: calc(var(--gap) + 10px);
+  margin-top: 10px;
+  transition: border-color var(--transition) ease,
+              background-color var(--transition) ease;
+}
+#__ID__ .group-box.solid { border-style: solid; }
+#__ID__ .group-badge {
+  position: absolute; top: -10px; left: 12px;
+  font-size: calc(var(--font-size) - 3px); font-weight: 700;
+  color: #fff; padding: 1px 9px; border-radius: 10px; line-height: 1.5;
+}
+#__ID__ .cell.data.flag-group-key { color: #fff; font-weight: 700; }
 </style>
 
 <div id="__ID__">
@@ -158,6 +173,7 @@
     var parts = [];
     if (d.hidden_rows > 0) parts.push("+" + d.hidden_rows + (d.hidden_rows === 1 ? " row" : " rows"));
     if (d.hidden_cols > 0) parts.push(d.hidden_cols + (d.hidden_cols === 1 ? " col" : " cols"));
+    if (d.hidden_groups > 0) parts.push("+" + d.hidden_groups + (d.hidden_groups === 1 ? " group" : " groups"));
     if (!parts.length) return "";
     return parts.join(" \\u00b7 ") + " not shown";
   }
@@ -173,6 +189,12 @@
     calloutEl.textContent = PAYLOAD.callout;
     calloutEl.style.display = "block";
     return;
+  }
+
+  /* ---------- Informational note (shown WITH the animation) ---------- */
+  if (PAYLOAD.note) {
+    calloutEl.textContent = PAYLOAD.note;
+    calloutEl.style.display = "block";
   }
 
   /* ---------- Build STEPS by verb ---------- */
@@ -229,6 +251,55 @@
                (newCols.length === 1 ? " new column added" : " new columns added"),
         activeCols: AFTER.cols, fadedCols: [], rows: AFTER.rows, newCols: newCols }
     ];
+  } else if (PAYLOAD.verb === "arrange") {
+    var sortCols = PAYLOAD.sort_cols || [];
+    var sortDirs = PAYLOAD.directions || [];
+    var sortDesc = sortCols.map(function(c, i) {
+      return c + " (" + (sortDirs[i] === "desc" ? "descending" : "ascending") + ")";
+    }).join(", then ");
+    STEPS = [
+      { label: "Original data \\u2014 rows in their current order",
+        activeCols: BEFORE.cols, fadedCols: [], rows: BEFORE.rows },
+      { label: "Sorting by " + sortDesc,
+        activeCols: BEFORE.cols, fadedCols: [], rows: BEFORE.rows,
+        highlightSourceCols: sortCols },
+      { label: "Rows reshuffle into the new order...",
+        activeCols: BEFORE.cols, fadedCols: [], rows: AFTER.rows,
+        highlightSourceCols: sortCols },
+      { label: "arrange(" + PAYLOAD.expression + ") \\u2014 rows reordered, " +
+               "none added or removed (" + BEFORE.rows.length + " \\u00d7 " +
+               BEFORE.cols.length + " in, " + AFTER.rows.length + " \\u00d7 " +
+               AFTER.cols.length + " out)",
+        activeCols: AFTER.cols, fadedCols: [], rows: AFTER.rows }
+    ];
+  } else if (PAYLOAD.verb === "group_summarize") {
+    var GROUPS = PAYLOAD.groups || [];
+    var keyCol = PAYLOAD.group_col;
+    var sumCols = PAYLOAD.summary_cols || [];
+    var sumWord = (PAYLOAD.verb_label || "summarize") + "()";
+    var summaryBoxes = GROUPS.map(function(g, i) {
+      return { label: g.label, count: g.count, color: g.color, row_indices: [i] };
+    });
+    STEPS = [
+      { label: "Original data \\u2014 " + BEFORE.rows.length +
+               " sampled rows, no grouping yet",
+        activeCols: BEFORE.cols, fadedCols: [], rows: BEFORE.rows },
+      { label: "group_by(" + keyCol + ") tags each row with its group \\u2014 " +
+               "the data is unchanged: still " + BEFORE.rows.length +
+               " rows, nothing is aggregated",
+        activeCols: BEFORE.cols, fadedCols: [], rows: BEFORE.rows,
+        groupBoxes: GROUPS, keyCol: keyCol },
+      { label: "Within each box the rows gather \\u2014 many rows are about to become one",
+        activeCols: BEFORE.cols, fadedCols: [], rows: BEFORE.rows,
+        groupBoxes: GROUPS, keyCol: keyCol, collapseTail: true },
+      { label: sumWord + " computes " + sumCols.join(", ") +
+               " \\u2014 one row per group (" + GROUPS.length +
+               (GROUPS.length === 1 ? " group" : " groups") + " \\u2192 " +
+               AFTER.rows.length + (AFTER.rows.length === 1 ? " row" : " rows") + ")",
+        activeCols: AFTER.cols, fadedCols: [], rows: AFTER.rows,
+        groupBoxes: summaryBoxes, keyCol: keyCol, solidBoxes: true,
+        newCols: sumCols }
+    ];
   }
 
   /* ---------- State + render ---------- */
@@ -256,6 +327,46 @@
     });
     gridEl.appendChild(headerRow);
 
+    if (step.groupBoxes) {
+      /* grouped layout: rows live inside dashed (or solid) colored boxes */
+      step.groupBoxes.forEach(function(box) {
+        var boxEl = document.createElement("div");
+        boxEl.className = "group-box" + (step.solidBoxes ? " solid" : "");
+        boxEl.style.borderColor = box.color;
+        boxEl.style.background = box.color + "14";  /* ~8% tint */
+
+        var badge = document.createElement("div");
+        badge.className = "group-badge";
+        badge.style.background = box.color;
+        badge.textContent = box.label + " \\u00d7 " + box.count;
+        boxEl.appendChild(badge);
+
+        box.row_indices.forEach(function(ri, pos) {
+          var row = step.rows[ri];
+          if (!row) return;
+          var tr = document.createElement("div");
+          var rowCls = "grid-row";
+          if (step.collapseTail && pos > 0) rowCls += " row-faded";
+          tr.className = rowCls;
+
+          step.activeCols.forEach(function(col) {
+            var cell = document.createElement("div");
+            var cls = "cell data";
+            if (col === step.keyCol) cls += " flag-group-key";
+            if ((step.newCols || []).indexOf(col) >= 0) cls += " flag-new";
+            cell.className = cls;
+            if (col === step.keyCol) {
+              cell.style.background = box.color;
+              cell.style.borderColor = box.color;
+            }
+            cell.textContent = (row[col] != null) ? row[col] : "";
+            tr.appendChild(cell);
+          });
+          boxEl.appendChild(tr);
+        });
+        gridEl.appendChild(boxEl);
+      });
+    } else {
     step.rows.forEach(function(row, rowIdx) {
       var tr = document.createElement("div");
       var rowCls = "grid-row";
@@ -271,12 +382,14 @@
         if (flag === "drop") cls += " flag-drop";
         if ((step.newCols || []).indexOf(col) >= 0) cls += " flag-new";
         if (step.highlightSource === col) cls += " flag-keep";
+        if ((step.highlightSourceCols || []).indexOf(col) >= 0) cls += " flag-keep";
         cell.className = cls;
         cell.textContent = (row[col] != null) ? row[col] : "";
         tr.appendChild(cell);
       });
       gridEl.appendChild(tr);
     });
+    }
 
     labelEl.textContent = step.label;
 

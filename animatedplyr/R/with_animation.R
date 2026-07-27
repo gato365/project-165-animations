@@ -8,8 +8,8 @@
 #' This is the recommended classroom syntax.
 #'
 #' @param data A data frame.
-#' @param expr A dplyr verb call: `filter(...)`, `select(...)`, or
-#'   `mutate(...)`.
+#' @param expr A dplyr verb call: `filter(...)`, `select(...)`,
+#'   `mutate(...)`, or `arrange(...)`.
 #' @param n_rows Maximum rows to display. Default 5.
 #' @param seed Optional integer for reproducible sampling.
 #' @param config Optional configuration list from [animate_config()].
@@ -21,6 +21,7 @@
 #' with_animation(mtcars, filter(mpg > 19.3))
 #' with_animation(mtcars, select(mpg, cyl, hp))
 #' with_animation(mtcars, mutate(wt_kg = wt * 453.6))
+#' with_animation(mtcars, arrange(desc(mpg)))
 with_animation <- function(data, expr, n_rows = 5L, seed = NULL,
                            config = NULL) {
   expr_quo <- rlang::enquo(expr)
@@ -56,9 +57,15 @@ with_animation <- function(data, expr, n_rows = 5L, seed = NULL,
                             n_rows = n_rows, seed = seed, config = config)
     return(rlang::eval_tidy(fn_call, env = env))
   }
+  if (verb == "arrange") {
+    fn_call <- rlang::call2(animate_arrange, rlang::enexpr(data), !!!args,
+                            n_rows = n_rows, seed = seed, config = config)
+    return(rlang::eval_tidy(fn_call, env = env))
+  }
 
   stop("Unsupported verb: '", verb,
-       "'. Supported verbs are filter, select, mutate.", call. = FALSE)
+       "'. Supported verbs are filter, select, mutate, arrange.",
+       call. = FALSE)
 }
 
 

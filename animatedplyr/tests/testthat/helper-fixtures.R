@@ -39,6 +39,33 @@ nasty_df <- function() {
 payload_of <- function(x) attr(x, "animate_payload")
 config_of  <- function(x) attr(x, "animate_config")
 
+# Extract one column of a payload {cols, rows} table as a character vector.
+payload_col <- function(tbl, col) {
+  vapply(tbl$rows, function(r) r[[col]], character(1))
+}
+
+# Same, coerced to numeric ("NA" strings become NA quietly).
+payload_num <- function(tbl, col) {
+  suppressWarnings(as.numeric(payload_col(tbl, col)))
+}
+
+# One string per payload row, so whole rows can be compared/set-compared.
+payload_row_keys <- function(tbl) {
+  vapply(tbl$rows, function(r) paste(unlist(r), collapse = ""),
+         character(1))
+}
+
+# A frame with 4 groups of known, uneven sizes (10/8/6/4) and exact halves,
+# so summary values reconstructed from the payload strings are exact.
+grouped_df <- function() {
+  data.frame(
+    sp = rep(c("A", "B", "C", "D"), times = c(10, 8, 6, 4)),
+    m  = seq_len(28) / 2,
+    w  = rep(1:7, times = 4),
+    stringsAsFactors = FALSE
+  )
+}
+
 # Is the GIF pipeline actually runnable in this environment? Needs both
 # suggested packages AND a headless Chrome that webshot2 can drive.
 gif_pipeline_available <- function() {

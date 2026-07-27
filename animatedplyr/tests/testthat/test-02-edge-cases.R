@@ -70,7 +70,9 @@ test_that("animate_mutate warns and uses the first of several columns", {
 })
 
 test_that("with_animation rejects unsupported verbs", {
-  expect_error(with_animation(mtcars, arrange(mpg)), "Unsupported verb")
+  # arrange() is supported since the arrange animator landed, so this now
+  # uses a verb that stays unsupported.
+  expect_error(with_animation(mtcars, rename(x = mpg)), "Unsupported verb")
 })
 
 test_that("with_animation rejects a non-call expression", {

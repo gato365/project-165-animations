@@ -84,6 +84,28 @@
   as.list(out)
 }
 
+# Qualitative palette for group boxes in animate_group_summarize(), same
+# family as .default_colors() but ordered so adjacent boxes contrast strongly
+# and nothing collides with the purple "new column" highlight.
+.group_palette <- function(n) {
+  palette <- c("#FF6F00", "#2196F3", "#43A047",
+               "#E63946", "#00897B", "#3949AB")
+  as.list(palette[((seq_len(n) - 1L) %% length(palette)) + 1L])
+}
+
+# Uniform dark headers (#1a1a1a, white text) for the verbs whose story is
+# told through row/box colors — per-column rainbow headers would compete
+# with the group and sort highlights. `overrides` behaves as in
+# .default_colors().
+.dark_colors <- function(cols, overrides = NULL) {
+  out <- stats::setNames(rep("#1a1a1a", length(cols)), cols)
+  if (!is.null(overrides) && length(overrides)) {
+    shared <- intersect(names(overrides), cols)
+    out[shared] <- unname(overrides[shared])
+  }
+  as.list(out)
+}
+
 # Choose which columns to display: all `required` columns (in original df
 # order), plus randomly sampled extras up to `max_cols` total.
 .sample_cols <- function(df, required, max_cols = 4L) {

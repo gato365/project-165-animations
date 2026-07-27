@@ -6,7 +6,8 @@ Authors@R: c(
     person("Immanuel", "Williams", email = "immanuelwilliams@gato365.com",
            role = c("aut", "cre")))
 Description: Generates interactive HTML/CSS/JS animations that show how
-    'dplyr' verbs (filter, select, mutate) transform a data frame.
+    'dplyr' verbs (filter, select, mutate, arrange, and a combined
+    group_by + summarize) transform a data frame.
     Designed for statistics education: animations render inline below
     Quarto/R Markdown chunks and in the RStudio/Positron Viewer pane.
     Smart sampling keeps displays small (at most 5 rows and 4 columns)

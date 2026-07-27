@@ -31,6 +31,33 @@ animate_select(iris,Sepal.Length, Sepal.Width, seed = 42)
 animate_mutate(mtcars, wt_kg = wt * 453.6, seed = 42)
 ```
 
+### arrange()
+
+```{r}
+animate_arrange(mtcars, desc(mpg), seed = 42)
+```
+
+Two sort keys, mixed directions:
+
+```{r}
+animate_arrange(palmerpenguins::penguins, species, desc(body_mass_g), seed = 42)
+```
+
+### group_by() + summarize(), in one animation
+
+```{r}
+animate_group_summarize(mtcars, cyl, n = n(), avg_mpg = mean(mpg), seed = 42)
+```
+
+Any summary function `dplyr::summarise()` accepts works — here on the
+built-in Kobe Bryant game log:
+
+```{r}
+animate_group_summarize(kb_df, Game_Location,
+                        n = n(), avg_pts = mean(PTS), sd_pts = sd(PTS),
+                        seed = 42)
+```
+
 ## One-call wrapper
 
 ```{r}
@@ -60,6 +87,10 @@ animate_filter(mtcars, mpg > 0)      # all rows pass
 
 ```{r}
 animate_filter(mtcars, mpg > 1000)   # no rows pass
+```
+
+```{r}
+animate_arrange(data.frame(x = 1:8), x)   # rows already in order
 ```
 
 ## Disclosure pill
