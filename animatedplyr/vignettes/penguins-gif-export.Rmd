@@ -219,7 +219,7 @@ participates in the summary.
 ```{r group-gif, eval=can_gif, results="hide"}
 grp_anim <- animate_group_summarize(
   penguins_df, species,
-  n = n(), avg_mass = mean(body_mass_g),
+  n = n(), sd_mass = sd(body_mass_g),
   seed = 11
 )
 
