@@ -51,11 +51,13 @@ gapminder_df <- as.data.frame(gapminder)
 dplyr::glimpse(gapminder_df)
 ```
 
-The dataset is a good fit for the three verbs because it has:
+The dataset is a good fit for the verbs because it has:
 
 -   character and factor-like fields such as `country` and `continent`.
 -   a time variable in `year` for filtering.
 -   numeric measures like `lifeExp`, `pop`, and `gdpPercap` for mutation.
+-   an obvious ranking story (`desc(lifeExp)`) for arranging.
+-   `continent` as a natural grouping variable for group-wise summaries.
 
 ------------------------------------------------------------------------
 
@@ -123,9 +125,54 @@ The source column `gdpPercap` is highlighted first, then the new
 
 ------------------------------------------------------------------------
 
-## 6. Further Reading
+## 6. `arrange` → GIF
+
+Sorting by life expectancy, highest first. The sort column lights up, the
+rows visibly reshuffle, and the closing frame makes the pedagogical point
+explicit: rows are *reordered*, never added or removed.
+
+```{r arrange-gif, eval=can_gif, results="hide"}
+arr_anim <- animate_arrange(
+  gapminder_df, desc(lifeExp),
+  seed = 11
+)
+
+animate_save_gif(arr_anim, file.path(gif_dir, "gapminder_arrange.gif"))
+```
+
+```{r arrange-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "gapminder_arrange.gif"))
+```
+
+------------------------------------------------------------------------
+
+## 7. `group_by` + `summarize` → GIF
+
+One export covers the whole aggregation story: rows gather into dashed,
+color-coded boxes per continent (`group_by()` only tags rows — the data is
+unchanged), each box collapses, and one summary row per continent pops in
+with the computed values. The 3 most frequent continents are shown with
+deliberately uneven group sizes; the gray pill discloses the rest.
+
+```{r group-gif, eval=can_gif, results="hide"}
+grp_anim <- animate_group_summarize(
+  gapminder_df, continent,
+  n = n(), avg_life_exp = mean(lifeExp),
+  seed = 11
+)
+
+animate_save_gif(grp_anim, file.path(gif_dir, "gapminder_group_summarize.gif"))
+```
+
+```{r group-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "gapminder_group_summarize.gif"))
+```
+
+------------------------------------------------------------------------
+
+## 8. Further Reading
 
 -   `?animate_save_gif` for the GIF export API.
--   `?animate_select`, `?animate_filter`, `?animate_mutate` for the three verb
-    animators.
+-   `?animate_select`, `?animate_filter`, `?animate_mutate`,
+    `?animate_arrange`, `?animate_group_summarize` for the verb animators.
 -   `gapminder::gapminder` for the dataset documentation.

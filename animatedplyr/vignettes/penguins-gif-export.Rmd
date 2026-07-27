@@ -33,10 +33,11 @@ if (can_gif && !dir.exists(gif_dir)) dir.create(gif_dir)
 ## 1. Introduction
 
 The companion vignette *Animating dplyr Verbs with NBA GOAT Data* renders the
-three core animators — `animate_select()`, `animate_filter()`, and
-`animate_mutate()` — **inline** as live HTML/CSS/JS.
+core animators — `animate_select()`, `animate_filter()`, `animate_mutate()`,
+`animate_arrange()`, and `animate_group_summarize()` — **inline** as live
+HTML/CSS/JS.
 
-This vignette covers the other output path: turning each of those same three
+This vignette covers the other output path: turning each of those same
 animations into a self-contained **animated GIF** with `animate_save_gif()`. A
 GIF works anywhere an image works — PDF output, Word, Google Slides, a README,
 or plain markdown via `![](file.gif)` — so it is the right choice when you need
@@ -50,11 +51,13 @@ alternative to `iris` for teaching data wrangling.
 `animate_save_gif()` renders each step of an animation to a PNG frame with a
 headless browser (`webshot2`), then stitches the frames together with `magick`:
 
-| Function           | GIF helper                       |
-|--------------------|----------------------------------|
-| `animate_select()` | `animate_save_gif(anim, "x.gif")` |
-| `animate_filter()` | `animate_save_gif(anim, "x.gif")` |
-| `animate_mutate()` | `animate_save_gif(anim, "x.gif")` |
+| Function                    | GIF helper                        |
+|-----------------------------|-----------------------------------|
+| `animate_select()`          | `animate_save_gif(anim, "x.gif")` |
+| `animate_filter()`          | `animate_save_gif(anim, "x.gif")` |
+| `animate_mutate()`          | `animate_save_gif(anim, "x.gif")` |
+| `animate_arrange()`         | `animate_save_gif(anim, "x.gif")` |
+| `animate_group_summarize()` | `animate_save_gif(anim, "x.gif")` |
 
 Because it needs a browser and two extra packages, GIF export is **opt-in**.
 Install the suggested packages first:
@@ -89,6 +92,8 @@ The dataset has exactly the mix that makes the three verbs worth animating:
 -   numeric columns with a clear story (`body_mass_g`, `flipper_length_mm`) to
     **filter**.
 -   ratios worth computing (`bill_length_mm / bill_depth_mm`) to **mutate**.
+-   a heaviest-to-lightest story (`desc(body_mass_g)`) to **arrange**.
+-   three species of clearly different sizes to **group and summarize**.
 
 ------------------------------------------------------------------------
 
@@ -178,7 +183,56 @@ new `bill_ratio` column pops into view with its computed values.
 
 ------------------------------------------------------------------------
 
-## 6. The `with_animation()` shortcut also exports
+## 6. `arrange` → GIF
+
+`animate_arrange()` accepts everything `dplyr::arrange()` does, including
+`desc()` and multiple sort keys. Here: species alphabetically, and the
+heaviest birds first within each species. The final frame states the key
+lesson — rows reordered, none added or removed.
+
+```{r arrange-gif, eval=can_gif, results="hide"}
+arr_anim <- animate_arrange(
+  penguins_df, species, desc(body_mass_g),
+  seed = 11
+)
+
+animate_save_gif(arr_anim, file.path(gif_dir, "penguins_arrange.gif"))
+```
+
+```{r arrange-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "penguins_arrange.gif"))
+```
+
+The sort columns light up first, then the rows visibly reshuffle into the
+new order.
+
+------------------------------------------------------------------------
+
+## 7. `group_by` + `summarize` → GIF
+
+`animate_group_summarize()` animates the whole aggregation in one call: rows
+gather into dashed, color-coded boxes per species (with a "Adelie × 3"-style
+badge), each box collapses, and one summary row per species pops in. Rows
+with missing `body_mass_g` are skipped automatically so every shown value
+participates in the summary.
+
+```{r group-gif, eval=can_gif, results="hide"}
+grp_anim <- animate_group_summarize(
+  penguins_df, species,
+  n = n(), avg_mass = mean(body_mass_g),
+  seed = 11
+)
+
+animate_save_gif(grp_anim, file.path(gif_dir, "penguins_group_summarize.gif"))
+```
+
+```{r group-embed, echo=FALSE, eval=can_gif, out.width="100%"}
+knitr::include_graphics(file.path(gif_dir, "penguins_group_summarize.gif"))
+```
+
+------------------------------------------------------------------------
+
+## 8. The `with_animation()` shortcut also exports
 
 `animate_save_gif()` accepts anything the animators return, including the output
 of `with_animation()`. So the one-call classroom syntax exports to GIF too.
@@ -195,17 +249,22 @@ animate_save_gif(wa_anim, file.path(gif_dir, "penguins_with_animation.gif"))
 
 ------------------------------------------------------------------------
 
-## 7. All three in one pass
+## 9. All five in one pass
 
 When you have a folder of teaching examples, a small loop saves the whole set.
 This builds one GIF per verb in a single sweep.
 
 ```{r batch-gif, eval=can_gif, results="hide"}
 animations <- list(
-  select = animate_select(penguins_df, species, island, body_mass_g, seed = 1),
-  filter = animate_filter(penguins_df, body_mass_g > 4000, seed = 7),
-  mutate = animate_mutate(penguins_df,
-                          bill_ratio = bill_length_mm / bill_depth_mm, seed = 3)
+  select  = animate_select(penguins_df, species, island, body_mass_g, seed = 1),
+  filter  = animate_filter(penguins_df, body_mass_g > 4000, seed = 7),
+  mutate  = animate_mutate(penguins_df,
+                           bill_ratio = bill_length_mm / bill_depth_mm, seed = 3),
+  arrange = animate_arrange(penguins_df, species, desc(body_mass_g), seed = 11),
+  group_summarize = animate_group_summarize(penguins_df, species,
+                                            n = n(),
+                                            avg_mass = mean(body_mass_g),
+                                            seed = 11)
 )
 
 for (verb in names(animations)) {
@@ -226,7 +285,8 @@ invisibly, so you can collect the paths if you need them downstream.
 
 -   `?animate_save_gif` — full GIF export documentation, including `fps` and
     frame-size arguments.
--   `?animate_select`, `?animate_filter`, `?animate_mutate` — per-verb docs.
+-   `?animate_select`, `?animate_filter`, `?animate_mutate`,
+    `?animate_arrange`, `?animate_group_summarize` — per-verb docs.
 -   `?with_animation` — the single-call wrapper.
 -   `vignette("nba-goats-animations", package = "animatedplyr")` — the inline
     HTML animation walkthrough.

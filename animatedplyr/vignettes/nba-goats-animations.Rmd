@@ -23,13 +23,15 @@ knitr::opts_chunk$set(
 
 ### The `animatedplyr` Package
 
-`animatedplyr` generates step-by-step HTML animations that show how the three core **dplyr data-wrangling verbs** transform a data frame:
+`animatedplyr` generates step-by-step HTML animations that show how the core **dplyr data-wrangling verbs** transform a data frame:
 
-| Verb       | What it does                   | Animator           |
-|------------|--------------------------------|--------------------|
-| `select()` | Keep or drop columns           | `animate_select()` |
-| `filter()` | Keep rows matching a condition | `animate_filter()` |
-| `mutate()` | Add or modify columns          | `animate_mutate()` |
+| Verb                       | What it does                   | Animator                    |
+|----------------------------|--------------------------------|-----------------------------|
+| `select()`                 | Keep or drop columns           | `animate_select()`          |
+| `filter()`                 | Keep rows matching a condition | `animate_filter()`          |
+| `mutate()`                 | Add or modify columns          | `animate_mutate()`          |
+| `arrange()`                | Reorder rows                   | `animate_arrange()`         |
+| `group_by()` + `summarize()` | Aggregate one row per group  | `animate_group_summarize()` |
 
 Each animation renders inline below a code chunk in Quarto / R Markdown and in the RStudio / Positron Viewer pane at the console. Because big data frames are hard to follow on screen, `animatedplyr` applies *smart sampling*: it shows at most **5 rows and 4 columns** while always including the columns that matter for the operation being animated.
 
@@ -161,7 +163,7 @@ animate_filter(kb_df, Game_Location == "Home", seed = 1)
 Combining two conditions with `&` works exactly as in `dplyr`.
 
 ```{r filter-road-wins}
-animate_filter(nba_goats,
+animate_filter(kb_df,
                Game_Location == "Away" & Game_Outcome == "W",
                seed = 3)
 ```
@@ -297,9 +299,109 @@ animate_mutate(kb_df, pts_per_fg_attempt = PTS / FGA, seed = 1)
 
 ------------------------------------------------------------------------
 
+## 6. `arrange` — Reordering Rows
+
+`animate_arrange()` shows how sorting works without touching the data itself:
+
+1.  **Before** — the sampled rows in their current order.
+2.  **Sort key** — the column(s) driving the sort light up, with the direction named.
+3.  **Reshuffle** — the rows visibly re-order.
+4.  **After** — the closing label makes the key point: *rows reordered, none added or removed*. Same rows, same dimensions — `arrange()` changes ORDER, never CONTENT.
+
+The sampler deliberately picks rows that are **not** already in sorted order, so every animation has a visible reshuffle.
+
+### 6.1 Best scoring games first
+
+```{r arrange-pts}
+animate_arrange(kb_df, desc(PTS), seed = 1)
+```
+
+### 6.2 Two sort keys, mixed directions
+
+Sort by season, and within each season put the most efficient games
+(highest Game Score) first — exactly the `dplyr` semantics, ties and all.
+
+```{r arrange-season-gmsc}
+animate_arrange(kb_df, Season, desc(GmSc), seed = 4)
+```
+
+### 6.3 Using the `with_animation()` wrapper for arrange
+
+```{r arrange-with-animation}
+with_animation(kb_df, arrange(desc(TRB)), seed = 6)
+```
+
+### 6.4 When the rows are already in order
+
+`kb_df` is a chronological game log, so sorting by `Date` changes nothing —
+and the package says so with a callout instead of a pointless animation.
+
+```{r arrange-sorted-callout}
+animate_arrange(kb_df, Date, seed = 1)
+```
+
+------------------------------------------------------------------------
+
+## 7. `group_by` + `summarize` — Aggregating by Group
+
+`animate_group_summarize()` animates the whole aggregation story in one call
+(no chaining needed):
+
+1.  **Before** — raw sampled rows, ungrouped.
+2.  **group_by** — rows gather into dashed, color-coded boxes, one per group, each with a badge like "Home × 3". The label stresses that the data is *unchanged* — `group_by()` only tags rows.
+3.  **Gather** — within each box, rows collapse toward one.
+4.  **summarize** — one row per group pops in with the computed values, outlined in its group's color so you can trace where it came from.
+
+Up to 3 groups are shown with deliberately **uneven** sizes, so students see that groups differ before they collapse; the badge count always equals `n()`.
+
+### 7.1 Home vs. away scoring
+
+```{r group-location}
+animate_group_summarize(kb_df, Game_Location,
+                        n = n(), avg_pts = mean(PTS),
+                        seed = 1)
+```
+
+### 7.2 Wins vs. losses — any summary function works
+
+Anything `dplyr::summarise()` accepts is fair game: `n()`, `mean()`, `sd()`,
+`median()`, `max()`, ...
+
+```{r group-outcome}
+animate_group_summarize(kb_df, Game_Outcome,
+                        avg_margin = mean(Point_Margin),
+                        best_game  = max(PTS),
+                        seed = 2)
+```
+
+### 7.3 Many groups? The pill tells you what's hidden
+
+`kb_df` spans 15 seasons; the animation shows the 3 most frequent groups and
+the gray pill discloses the rest ("+12 groups not shown").
+
+```{r group-season}
+animate_group_summarize(kb_df, Season,
+                        avg_gmsc = mean(GmSc),
+                        seed = 3)
+```
+
+### 7.4 British spelling included
+
+`animate_group_summarise()` is an exact alias — the title chip follows your
+spelling.
+
+```{r group-summarise-alias}
+animate_group_summarise(kb_df, Game_Location,
+                        median_min = median(MP),
+                        seed = 5)
+```
+
+------------------------------------------------------------------------
+
 ## Further Reading
 
--   `?animate_select`, `?animate_filter`, `?animate_mutate` — per-function docs.
+-   `?animate_select`, `?animate_filter`, `?animate_mutate`,
+    `?animate_arrange`, `?animate_group_summarize` — per-function docs.
 -   `?animate_config` — tuning box size, font, animation speed, and column colors.
 -   `?with_animation` — the single-call wrapper for classroom use.
 -   `?kb_df`, `?lb_df`, `?mj_df` — player game-log dataset docs.
